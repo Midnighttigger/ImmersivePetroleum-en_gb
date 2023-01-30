@@ -35,6 +35,7 @@ public class IPBlockLoot implements Consumer<BiConsumer<ResourceLocation, LootTa
 		registerSelfDropping(IPContent.Blocks.FLARESTACK.get());
 		registerSelfDropping(IPContent.Blocks.PETCOKE.get());
 		registerSelfDropping(IPContent.Blocks.SEISMIC_SURVEY.get());
+		registerSelfDropping(IPContent.Blocks.PARAFFIN_WAX.get());
 		
 		register(IPContent.Blocks.GAS_GENERATOR.get(), tileDrop());
 		register(IPContent.Blocks.AUTO_LUBRICATOR.get(), tileDrop());
@@ -42,6 +43,9 @@ public class IPBlockLoot implements Consumer<BiConsumer<ResourceLocation, LootTa
 		registerMultiblock(IPContent.Multiblock.DISTILLATIONTOWER.get());
 		registerMultiblock(IPContent.Multiblock.PUMPJACK.get());
 		registerMultiblock(IPContent.Multiblock.HYDROTREATER.get());
+		registerMultiblock(IPContent.Multiblock.COKERUNIT.get());
+		registerMultiblock(IPContent.Multiblock.DERRICK.get());
+		registerMultiblock(IPContent.Multiblock.OILTANK.get());
 	}
 	
 	private <S extends SlabBlock> void createSlabItemTable(S block){

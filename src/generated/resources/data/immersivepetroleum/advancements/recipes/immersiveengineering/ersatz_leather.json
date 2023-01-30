@@ -2,30 +2,26 @@
   "parent": "minecraft:recipes/root",
   "rewards": {
     "recipes": [
-      "immersivepetroleum:asphalt3"
+      "immersivepetroleum:ersatz_leather"
     ]
   },
   "criteria": {
-    "has_bitumen": {
+    "has_hemp_fabric": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "items": [
-              "immersivepetroleum:bitumen"
-            ]
+            "tag": "forge:fabric_hemp"
           }
         ]
       }
     },
-    "has_slag": {
+    "has_paraffin_wax": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "items": [
-              "immersiveengineering:slag"
-            ]
+            "tag": "forge:wax/paraffin"
           }
         ]
       }
@@ -33,14 +29,14 @@
     "has_the_recipe": {
       "trigger": "minecraft:recipe_unlocked",
       "conditions": {
-        "recipe": "immersivepetroleum:asphalt3"
+        "recipe": "immersivepetroleum:ersatz_leather"
       }
     }
   },
   "requirements": [
     [
-      "has_bitumen",
-      "has_slag",
+      "has_hemp_fabric",
+      "has_paraffin_wax",
       "has_the_recipe"
     ]
   ]

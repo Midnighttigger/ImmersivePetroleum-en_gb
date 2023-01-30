@@ -33,6 +33,7 @@ import flaxbeard.immersivepetroleum.common.blocks.metal.SeismicSurveyBlock;
 import flaxbeard.immersivepetroleum.common.blocks.stone.AsphaltBlock;
 import flaxbeard.immersivepetroleum.common.blocks.stone.AsphaltSlab;
 import flaxbeard.immersivepetroleum.common.blocks.stone.AsphaltStairs;
+import flaxbeard.immersivepetroleum.common.blocks.stone.ParaffinWaxBlock;
 import flaxbeard.immersivepetroleum.common.blocks.stone.PetcokeBlock;
 import flaxbeard.immersivepetroleum.common.blocks.stone.WellBlock;
 import flaxbeard.immersivepetroleum.common.blocks.stone.WellPipeBlock;
@@ -144,9 +145,9 @@ public class IPContent{
 		public static final RegistryObject<SlabBlock> ASPHALT_SLAB = IPRegisters.registerBlock("asphalt_slab", () -> new AsphaltSlab(ASPHALT.get()));
 		public static final RegistryObject<StairBlock> ASPHALT_STAIR = IPRegisters.registerBlock("asphalt_stair", () -> new AsphaltStairs(ASPHALT.get()));
 		public static final RegistryObject<PetcokeBlock> PETCOKE = IPRegisters.registerIPBlock("petcoke_block", PetcokeBlock::new);
-		
 		public static final RegistryObject<WellBlock> WELL = IPRegisters.registerBlock("well", WellBlock::new);
 		public static final RegistryObject<WellPipeBlock> WELL_PIPE = IPRegisters.registerBlock("well_pipe", WellPipeBlock::new);
+		public static final RegistryObject<ParaffinWaxBlock> PARAFFIN_WAX = IPRegisters.registerIPBlock("paraffin_wax_block", ParaffinWaxBlock::new);
 		
 		private static void forceClassLoad(){
 			registerItemBlock(Blocks.ASPHALT_SLAB);
@@ -172,6 +173,12 @@ public class IPContent{
 		public static final RegistryObject<Item> PETCOKEDUST = IPRegisters.registerItem("petcoke_dust", IPItemBase::new);
 		public static final RegistryObject<Item> SURVEYRESULT = IPRegisters.registerItem("survey_result", SurveyResultItem::new);
 		
+		public static final RegistryObject<Item> PARAFFIN_WAX = IPRegisters.registerItem("paraffin_wax", () -> new IPItemBase(){
+			@Override
+			public int getBurnTime(ItemStack itemStack, RecipeType<?> recipeType){
+				return 800;
+			}
+		});
 		private static void forceClassLoad(){
 		}
 	}

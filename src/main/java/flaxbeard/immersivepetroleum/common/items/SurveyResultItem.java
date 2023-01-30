@@ -39,6 +39,12 @@ public class SurveyResultItem extends IPItemBase{
 			ISurveyInfo info = ISurveyInfo.from(stack);
 			
 			if(info instanceof SurveyScan scan){
+				if(scan.getUuid() == null){
+					tooltip.add(new TextComponent("SORRY, IM FAULTY!").withStyle(ChatFormatting.RED));
+					tooltip.add(new TextComponent("YOU'LL HAVE TO TOSS ME!").withStyle(ChatFormatting.RED));
+					return;
+				}
+				
 				tooltip.add(new TranslatableComponent("desc.immersivepetroleum.flavour.surveytool.holdme"));
 				
 				if(flagIn == TooltipFlag.Default.ADVANCED){
@@ -53,9 +59,16 @@ public class SurveyResultItem extends IPItemBase{
 				byte percentage = islandInfo.getStatus();
 				FluidStack fs = islandInfo.getFluidStack();
 				
+				if(islandInfo.getFluidStack() == FluidStack.EMPTY){
+					tooltip.add(new TextComponent("SORRY, IM FAULTY!").withStyle(ChatFormatting.RED));
+					tooltip.add(new TextComponent("YOU'LL HAVE TO TOSS ME!").withStyle(ChatFormatting.RED));
+					return;
+				}
+				
 				tooltip.add(new TranslatableComponent(fs.getTranslationKey()).withStyle(ChatFormatting.DARK_GRAY));
 				tooltip.add(new TranslatableComponent("desc.immersivepetroleum.info.survey_result.amount", String.format(Locale.ENGLISH, "%,.3f", amount / 1000D), percentage).withStyle(ChatFormatting.DARK_GRAY));
 				tooltip.add(new TranslatableComponent("desc.immersivepetroleum.info.survey_result.expected", expected).withStyle(ChatFormatting.DARK_GRAY));
+				
 			}
 			
 			if(info != null){

@@ -9,11 +9,15 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import com.google.common.collect.Multimap;
+
 import blusunrize.immersiveengineering.common.blocks.generic.MultiblockPartBlockEntity;
 import flaxbeard.immersivepetroleum.ImmersivePetroleum;
 import flaxbeard.immersivepetroleum.api.crafting.LubricatedHandler;
 import flaxbeard.immersivepetroleum.api.crafting.LubricatedHandler.ILubricationHandler;
 import flaxbeard.immersivepetroleum.api.crafting.LubricatedHandler.LubricatedTileInfo;
+import flaxbeard.immersivepetroleum.api.reservoir.ReservoirHandler;
+import flaxbeard.immersivepetroleum.api.reservoir.ReservoirIsland;
 import flaxbeard.immersivepetroleum.common.cfg.IPServerConfig;
 import flaxbeard.immersivepetroleum.common.entity.MotorboatEntity;
 import flaxbeard.immersivepetroleum.common.fluids.NapalmFluid;
@@ -24,6 +28,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
@@ -48,7 +53,9 @@ import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.EntityMountEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.world.WorldEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public class CommonEventHandler{
@@ -63,6 +70,18 @@ public class CommonEventHandler{
 	public void onUnload(WorldEvent.Unload event){
 		if(!event.getWorld().isClientSide()){
 			IPSaveData.markInstanceAsDirty();
+		}
+	}
+	
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public void onServerStopped(ServerStoppedEvent event){
+		Multimap<ResourceKey<Level>, ReservoirIsland> mainList = ReservoirHandler.getReservoirIslandList();
+		synchronized(mainList){
+			ImmersivePetroleum.log.debug("[ReservoirIslands]: Clearing main list.");
+			mainList.clear();
+			
+			ImmersivePetroleum.log.debug("[ReservoirIslands]: Clearing Cache...");
+			ReservoirHandler.clearCache();
 		}
 	}
 	
@@ -148,21 +167,17 @@ public class CommonEventHandler{
 							int numBlocks = (int) (size.getX() * size.getY() * size.getZ() * 0.25F);
 							for(int i = 0;i < numBlocks;i++){
 								BlockPos pos = part.getBlockPosForPos(new BlockPos(size.getX() * random.nextFloat(), size.getY() * random.nextFloat(), size.getZ() * random.nextFloat()));
-								if(world.getBlockState(pos) == Blocks.AIR.defaultBlockState())
-									continue;
 								
-								BlockEntity te2 = world.getBlockEntity(pos);
-								if(te2 instanceof MultiblockPartBlockEntity part2){
-									if(part2.master() == part.master()){
-										for(Direction facing:Direction.Plane.HORIZONTAL){
-											if(world.random.nextInt(30) == 0){
-												Vec3i direction = facing.getNormal();
-												world.addParticle(ParticleTypes.FALLING_HONEY,
-														(pos.getX() + .5f) + (direction.getX() * .65f),
-														pos.getY() + 1,
-														(pos.getZ() + .5f) + (direction.getZ() * .65f),
-														0, 0, 0);
-											}
+								if(world.getBlockState(pos).getBlock() != Blocks.AIR && world.getBlockEntity(pos) instanceof MultiblockPartBlockEntity part2 && part2.master() == part.master()){
+									for(Direction facing:Direction.Plane.HORIZONTAL){
+										if(world.random.nextInt(30) == 0){
+											Vec3i direction = facing.getNormal();
+											
+											float x = (pos.getX() + .5f) + (direction.getX() * .65f);
+											float y = pos.getY() + 1;
+											float z = (pos.getZ() + .5f) + (direction.getZ() * .65f);
+											
+											world.addParticle(ParticleTypes.FALLING_HONEY, x, y, z, 0, 0, 0);
 										}
 									}
 								}
