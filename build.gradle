@@ -1,6 +1,6 @@
 buildscript {
 	repositories {
-		maven { url = 'https://files.minecraftforge.net/maven' }
+		maven { url = 'https://maven.minecraftforge.net' }
 		jcenter()
 		mavenCentral()
 		maven { url 'https://maven.parchmentmc.org' }
@@ -17,14 +17,13 @@ apply plugin: 'org.parchmentmc.librarian.forgegradle'
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '17'
 //----------------------------------------------------------------------------------------------------------------------
 
-version = '4.0.0-17'
+version = '4.1.0-19'
 group = 'flaxbeard.immersivepetroleum'
 archivesBaseName = 'ImmersivePetroleum-1.18.2'
 
 repositories {
 	maven {	name = "BlameJared";	url = "https://maven.blamejared.com/" }		 // IE & CT Files
 	maven { name = "DVS1 Maven FS"; url = "https://dvs1.progwml6.com/files/maven" } // JEI & Tinkers Files
-	maven { url = 'https://maven.latmod.com/' }									 // Needed for JEI
 	maven { name = "CurseMaven";	url = 'https://cfa2.cursemaven.com' }		   // Needed for PNC
 	maven { // CC-Tweaked
 		url 'https://squiddev.cc/maven/'

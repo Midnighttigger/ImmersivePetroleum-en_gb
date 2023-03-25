@@ -20,8 +20,7 @@ import blusunrize.immersiveengineering.common.util.ResettableCapability;
 import blusunrize.immersiveengineering.common.util.orientation.RelativeBlockFace;
 import flaxbeard.immersivepetroleum.api.reservoir.ReservoirHandler;
 import flaxbeard.immersivepetroleum.api.reservoir.ReservoirIsland;
-import flaxbeard.immersivepetroleum.common.blocks.ticking.IPClientTickableTile;
-import flaxbeard.immersivepetroleum.common.blocks.ticking.IPServerTickableTile;
+import flaxbeard.immersivepetroleum.common.blocks.ticking.IPCommonTickableTile;
 import flaxbeard.immersivepetroleum.common.cfg.IPServerConfig;
 import flaxbeard.immersivepetroleum.common.multiblocks.PumpjackMultiblock;
 import flaxbeard.immersivepetroleum.common.util.FluidHelper;
@@ -49,7 +48,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
-public class PumpjackTileEntity extends PoweredMultiblockBlockEntity<PumpjackTileEntity, MultiblockRecipe> implements IPServerTickableTile, IPClientTickableTile, IEBlockInterfaces.IBlockBounds{
+public class PumpjackTileEntity extends PoweredMultiblockBlockEntity<PumpjackTileEntity, MultiblockRecipe> implements IPCommonTickableTile, IEBlockInterfaces.IBlockBounds{
 	/** Template-Location of the Energy Input Port. (0, 1, 5) */
 	public static final Set<BlockPos> Redstone_IN = ImmutableSet.of(new BlockPos(0, 1, 5));
 	
@@ -144,13 +143,13 @@ public class PumpjackTileEntity extends PoweredMultiblockBlockEntity<PumpjackTil
 							for(ColumnPos cPos:well.tappedIslands){
 								ReservoirIsland island = ReservoirHandler.getIsland(this.level, cPos);
 								if(island != null){
-									FluidStack fluid = new FluidStack(island.getFluid(), island.extract(getLevelNonnull(), extractSpeed, FluidAction.SIMULATE));
+									FluidStack fluid = new FluidStack(island.getFluid(), island.extract(extractSpeed, FluidAction.SIMULATE));
 									
 									if(portEast_output != null){
 										int accepted = portEast_output.fill(fluid, FluidAction.SIMULATE);
 										if(accepted > 0){
 											int drained = portEast_output.fill(FluidHelper.copyFluid(fluid, Math.min(fluid.getAmount(), accepted)), FluidAction.EXECUTE);
-											island.extract(getLevelNonnull(), drained, FluidAction.EXECUTE);
+											island.extract(drained, FluidAction.EXECUTE);
 											fluid = FluidHelper.copyFluid(fluid, fluid.getAmount() - drained);
 											active = true;
 										}
@@ -160,7 +159,7 @@ public class PumpjackTileEntity extends PoweredMultiblockBlockEntity<PumpjackTil
 										int accepted = portWest_output.fill(fluid, FluidAction.SIMULATE);
 										if(accepted > 0){
 											int drained = portWest_output.fill(FluidHelper.copyFluid(fluid, Math.min(fluid.getAmount(), accepted)), FluidAction.EXECUTE);
-											island.extract(getLevelNonnull(), drained, FluidAction.EXECUTE);
+											island.extract(drained, FluidAction.EXECUTE);
 											active = true;
 										}
 									}

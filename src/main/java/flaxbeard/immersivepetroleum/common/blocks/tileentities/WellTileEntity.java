@@ -12,8 +12,7 @@ import flaxbeard.immersivepetroleum.api.reservoir.ReservoirIsland;
 import flaxbeard.immersivepetroleum.client.ClientProxy;
 import flaxbeard.immersivepetroleum.common.IPTileTypes;
 import flaxbeard.immersivepetroleum.common.blocks.stone.WellPipeBlock;
-import flaxbeard.immersivepetroleum.common.blocks.ticking.IPClientTickableTile;
-import flaxbeard.immersivepetroleum.common.blocks.ticking.IPServerTickableTile;
+import flaxbeard.immersivepetroleum.common.blocks.ticking.IPCommonTickableTile;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -29,7 +28,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.registries.ForgeRegistries;
 
-public class WellTileEntity extends IPTileEntityBase implements IPServerTickableTile, IPClientTickableTile{
+public class WellTileEntity extends IPTileEntityBase implements IPCommonTickableTile{
 	
 	static final int PIPE_WORTH = 6;
 	static final int DEFAULT_PIPELENGTH = PIPE_WORTH * 64;
@@ -156,7 +155,14 @@ public class WellTileEntity extends IPTileEntityBase implements IPServerTickable
 	public void tickServer(){
 		if(this.drillingCompleted){
 			if(this.tappedIslands.size() > 0){
-				if(this.level.getGameTime() % 5 == 0){
+				for(ColumnPos cPos:this.tappedIslands){
+					ReservoirIsland island = ReservoirHandler.getIsland(getWorldNonnull(), cPos);
+					if(island != null && island.belowHydrostaticEquilibrium(getWorldNonnull())){
+						island.equalizeHydrostaticPressure(getWorldNonnull());
+					}
+				}
+				
+				if(this.getWorldNonnull().getGameTime() % 5 == 0){
 					boolean spill = false;
 					
 					int height = -1;

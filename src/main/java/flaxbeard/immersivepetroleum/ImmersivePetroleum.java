@@ -19,6 +19,8 @@ import flaxbeard.immersivepetroleum.common.IPContent;
 import flaxbeard.immersivepetroleum.common.IPContent.Fluids;
 import flaxbeard.immersivepetroleum.common.IPRegisters;
 import flaxbeard.immersivepetroleum.common.IPSaveData;
+import flaxbeard.immersivepetroleum.common.IPToolShaders;
+import flaxbeard.immersivepetroleum.common.ReservoirRegionDataStorage;
 import flaxbeard.immersivepetroleum.common.cfg.IPClientConfig;
 import flaxbeard.immersivepetroleum.common.cfg.IPServerConfig;
 import flaxbeard.immersivepetroleum.common.crafting.RecipeReloadListener;
@@ -36,7 +38,8 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
@@ -86,14 +89,15 @@ public class ImmersivePetroleum{
 		FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
 		FMLJavaModLoadingContext.get().getModEventBus().addListener(this::loadComplete);
 		
-		MinecraftForge.EVENT_BUS.addListener(this::serverStarted);
+		MinecraftForge.EVENT_BUS.addListener(this::worldLoad);
+		MinecraftForge.EVENT_BUS.addListener(this::serverStarting);
 		MinecraftForge.EVENT_BUS.addListener(this::registerCommand);
 		MinecraftForge.EVENT_BUS.addListener(this::addReloadListeners);
 		
 		IEventBus eBus = FMLJavaModLoadingContext.get().getModEventBus();
 		IPRegisters.addRegistersToEventBus(eBus);
 		
-		IPContent.populate();
+		IPContent.modConstruction();
 		IPLootFunctions.modConstruction();
 		IPRecipeTypes.modConstruction();
 		
@@ -110,6 +114,7 @@ public class ImmersivePetroleum{
 		
 		IPContent.preInit();
 		IPPacketHandler.preInit();
+		IPToolShaders.preInit();
 		
 		proxy.preInitEnd();
 		
@@ -151,13 +156,14 @@ public class ImmersivePetroleum{
 		event.addListener(new RecipeReloadListener(event.getServerResources()));
 	}
 	
-	public void serverStarted(ServerStartedEvent event){
-		ServerLevel world = event.getServer().getLevel(Level.OVERWORLD);
-		if(!world.isClientSide){
-			IPSaveData worldData = world.getDataStorage().computeIfAbsent(IPSaveData::new, IPSaveData::new, IPSaveData.dataName);
-			IPSaveData.setInstance(worldData);
+	public void worldLoad(WorldEvent.Load event){
+		if(!event.getWorld().isClientSide() && event.getWorld() instanceof ServerLevel world && world.dimension() == Level.OVERWORLD){
+			ReservoirRegionDataStorage.init(world.getDataStorage());
+			world.getDataStorage().computeIfAbsent(IPSaveData::new, IPSaveData::new, IPSaveData.dataName);
 		}
-		
+	}
+	
+	public void serverStarting(ServerStartingEvent event){
 		ReservoirHandler.recalculateChances();
 	}
 }

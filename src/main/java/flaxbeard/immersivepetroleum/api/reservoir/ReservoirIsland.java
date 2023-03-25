@@ -7,7 +7,7 @@ import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
-import flaxbeard.immersivepetroleum.common.IPSaveData;
+import flaxbeard.immersivepetroleum.common.ReservoirRegionDataStorage.RegionData;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -22,7 +22,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 /**
  * Every instance of this class is it's own little ecosystem.
  * <p>
- * What kind of Fluid it has, how much of it, how much residual (if any) after it's drained, etc.
+ * What kind of Fluid it has, how much of it, etc.
  * 
  * @author TwistedGate
  */
@@ -36,11 +36,13 @@ public class ReservoirIsland{
 	/** "Unsigned 32-Bit" */
 	public static final long MAX_AMOUNT = 0xFFFFFFFFL;
 	
+	private RegionData regionData;
+	
 	@Nonnull
 	private ReservoirType reservoir;
 	@Nonnull
 	private List<ColumnPos> poly;
-	private IslandAxisAlignedBB islandAABB;
+	private AxisAlignedIslandBB islandAABB;
 	private long amount;
 	private long capacity;
 	
@@ -72,7 +74,12 @@ public class ReservoirIsland{
 			if(p.z > maxZ) maxZ = p.z;
 		}
 		
-		this.islandAABB = new IslandAxisAlignedBB(minX, minZ, maxX, maxZ);
+		this.islandAABB = new AxisAlignedIslandBB(minX, minZ, maxX, maxZ);
+	}
+	
+	public void setRegion(RegionData data){
+		if(this.regionData == null)
+			this.regionData = data;
 	}
 	
 	/**
@@ -136,6 +143,12 @@ public class ReservoirIsland{
 		return this.amount <= 0L;
 	}
 	
+	public void setDirty(){
+		if(this.regionData != null){
+			this.regionData.setDirty();
+		}
+	}
+	
 	@Nonnull
 	public ReservoirType getType(){
 		return this.reservoir;
@@ -145,7 +158,7 @@ public class ReservoirIsland{
 		return this.reservoir.getFluid();
 	}
 	
-	public IslandAxisAlignedBB getBoundingBox(){
+	public AxisAlignedIslandBB getBoundingBox(){
 		return this.islandAABB;
 	}
 	
@@ -153,23 +166,39 @@ public class ReservoirIsland{
 		return Collections.unmodifiableList(this.poly);
 	}
 	
-	private long lastExtract = -1L;
+	private long lastEquilibriumTick = -1L;
+	
+	/**
+	 * Used by WellTileEntity to check to see if reservoir should regenerate residuals or not
+	 *
+	 * @param level needed to check game time
+	 * @return boolean on whether reservoir is below hydrostatic equilibrium
+	 */
+	public boolean belowHydrostaticEquilibrium(@Nonnull Level level) {
+		return this.reservoir.residual > 0 && this.amount <= this.reservoir.equilibrium && this.lastEquilibriumTick != level.getGameTime();
+	}
+	
+	/**
+	 * Used by WellTileEntity to handle reservoir residual regeneration
+	 *
+	 * @param level needed to check game time
+	 */
+	public void equalizeHydrostaticPressure(@Nonnull Level level) {
+		if(this.amount <= this.reservoir.equilibrium && this.lastEquilibriumTick != level.getGameTime()){
+			this.lastEquilibriumTick = level.getGameTime();
+			this.amount += this.reservoir.residual;
+		}
+	}
 	
 	/**
 	 * Used by Pumpjack
-	 * 
-	 * @param level       used to get the game time
+	 *
 	 * @param amount      to extract
 	 * @param fluidAction the {@link FluidAction} to extract with
-	 * @return how much has been extracted or residual if drained
+	 * @return how much has been extracted
 	 */
-	public int extract(@Nonnull Level level, int amount, FluidAction fluidAction){
+	public int extract(int amount, FluidAction fluidAction){
 		if(isEmpty()){
-			if(this.lastExtract != level.getGameTime()){
-				this.lastExtract = level.getGameTime();
-				return this.reservoir.residual;
-			}
-			
 			return 0;
 		}
 		
@@ -177,7 +206,7 @@ public class ReservoirIsland{
 		
 		if(fluidAction == FluidAction.EXECUTE){
 			this.amount -= extracted;
-			IPSaveData.markInstanceAsDirty();
+			setDirty();
 		}
 		
 		return extracted;
@@ -195,7 +224,7 @@ public class ReservoirIsland{
 			int flow = (int) Math.min(getFlow(pressure), this.amount);
 			
 			this.amount -= flow;
-			IPSaveData.markInstanceAsDirty();
+			setDirty();
 			return flow;
 		}
 		
@@ -226,26 +255,11 @@ public class ReservoirIsland{
 			// Pressure should drop from 100% to 0%
 			// While the reservoir is between 100% and 50% at max
 			
-			boolean debug = false;
-			if(debug){
-				float modifier = (this.amount - (this.capacity * 0.75F)) / ((float) this.capacity);
-				
-				modifier = Mth.clamp(modifier, 0.0F, 1.0F);
-				
-				// Slightly modified version of what TeamSpen210 gave me, thank you!
-				float min = 1F;
-				float max = 1000F;
-				float decay = (float) (-Math.log(min / max) / 1.0D);
-				float output = (float) (Math.exp(decay * noise) / max) * modifier;
-				
-				return output <= 0.001F ? 0.0F : output;
-			}else{
-				double half = this.capacity * 0.50;
-				double alt = this.amount - half;
-				if(alt > 0){
-					double pre = alt / half;
-					return (float) (pre * noise);
-				}
+			double half = this.capacity * 0.50;
+			double alt = this.amount - half;
+			if(alt > 0){
+				double pre = alt / half;
+				return (float) (pre * noise);
 			}
 		}
 		
@@ -259,7 +273,7 @@ public class ReservoirIsland{
 		nbt.putInt("capacity", (int) (this.getCapacity() & MAX_AMOUNT));
 		nbt.put("bounds", this.getBoundingBox().writeToNBT());
 		
-		final IslandAxisAlignedBB bounds = this.getBoundingBox();
+		final AxisAlignedIslandBB bounds = this.getBoundingBox();
 		final ListTag points = new ListTag();
 		this.poly.forEach(pos -> {
 			byte x = (byte) ((pos.x - bounds.minX) & 0xFF);
@@ -282,7 +296,7 @@ public class ReservoirIsland{
 			if(reservoir != null){
 				long amount = ((long) nbt.getInt("amount")) & MAX_AMOUNT;
 				long capacity = ((long) nbt.getInt("capacity")) & MAX_AMOUNT;
-				IslandAxisAlignedBB bounds = IslandAxisAlignedBB.readFromNBT(nbt.getCompound("bounds"));
+				AxisAlignedIslandBB bounds = new AxisAlignedIslandBB(nbt.getCompound("bounds"));
 				
 				final List<ColumnPos> points = new ArrayList<>();
 				final ListTag list = nbt.getList("points", Tag.TAG_COMPOUND);
